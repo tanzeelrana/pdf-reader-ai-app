@@ -37,7 +37,7 @@ EMBEDDINGS = HuggingFaceBgeEmbeddings(
 LLM = HuggingFacePipeline.from_model_id(
     model_id="gpt2-medium",
     task="text-generation",
-    pipeline_kwargs={"temperature": 0.1, "max_new_tokens": 100, "do_sample": True}
+    pipeline_kwargs={"temperature": 0.3, "max_new_tokens": 100, "do_sample": True}
 )
 
 def split_documents(file_path):
@@ -55,7 +55,6 @@ def load_file_into_db(file_path):
         return db
     else:
         return Chroma.from_documents(docs_after_split, EMBEDDINGS, persist_directory=CHROMA_PATH)
-
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -76,11 +75,10 @@ def upload_file():
 
 def initialize_retrieval_qa():
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=EMBEDDINGS)
-    retriever = db.as_retriever(search_type="similarity", search_kwargs={'k': 3, 'fetch_k': 3})
+    retriever = db.as_retriever(search_type="similarity", search_kwargs={'k': 3})
     PROMPT_TEMPLATE = """Use the following pieces of context to answer the question at the end. Please follow the following rules:
     1. If you don't know the answer, don't try to make up an answer. Just say "I can't find the final answer but you may want to check the following links".
     2. If you find the answer, write the answer in a concise way with five sentences maximum.
-    3. Only answer once, do not repeat the answer.
 
     {context}
 
@@ -97,8 +95,6 @@ def initialize_retrieval_qa():
         chain_type_kwargs={"prompt":PROMPT}
     )
 
-retrievalQA = initialize_retrieval_qa()
-
 @app.route('/query', methods=['POST'])
 def query():
     data = request.json
@@ -106,6 +102,7 @@ def query():
     if not question:
         return jsonify({"error": "Query parameter is required"}), 400
     start = time.time()
+    retrievalQA = initialize_retrieval_qa()
     result = retrievalQA.invoke({"query": question})
     end = time.time()
     relevant_docs = result['source_documents']
