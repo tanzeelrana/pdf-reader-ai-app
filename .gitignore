@@ -1,0 +1,5 @@
+pdf-reader-ai-app
+.env
+__pycache__
+upload/*
+chromaDB
