@@ -37,7 +37,7 @@ EMBEDDINGS = HuggingFaceBgeEmbeddings(
 LLM = HuggingFacePipeline.from_model_id(
     model_id="gpt2-large",
     task="text-generation",
-    pipeline_kwargs={"temperature": 0.6, "max_new_tokens": 100, "do_sample": True}
+    pipeline_kwargs={"temperature": 0.6, "max_new_tokens": 50, "do_sample": True}
 )
 
 def split_documents(file_path):
